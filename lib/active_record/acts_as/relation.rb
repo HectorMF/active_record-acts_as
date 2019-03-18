@@ -12,9 +12,9 @@ module ActiveRecord
           as                 = options.delete(:as) || :actable
           validates_actable  = !options.key?(:validates_actable) || options.delete(:validates_actable)
 
-          options = options.reverse_merge(as: as, validate: false, autosave: true, inverse_of: as)
+          options = options.reverse_merge(validate: false, autosave: true, inverse_of: as)
 
-          reflections = has_one(name, scope, options)
+          reflections = belongs_to(name, scope, options)#has_one(name, scope, options)
           default_scope -> {
             case association_method
               when :eager_load
@@ -46,7 +46,7 @@ module ActiveRecord
           cattr_reader(:acting_as_reflection) { reflections.stringify_keys[name.to_s] }
           cattr_reader(:acting_as_name) { name.to_s }
           cattr_reader(:acting_as_model) { (options[:class_name] || name.to_s.camelize).constantize }
-          class_eval "def #{name}; super || build_#{name}(acting_as_model.actable_reflection.name => self); end"
+          class_eval "def #{name}; super || build_#{name}(acting_as_model.actable_reflection_" + self.name.downcase  + ".name => self); end"
           alias_method :acting_as, name
           alias_method :acting_as=, "#{name}=".to_sym
 
@@ -76,17 +76,21 @@ module ActiveRecord
           super || acting_as?(klass)
         end
 
+        def set_actable(name)
+        end
+
+        def actable_as(name, scope = nil, **options)
+          options = options.reverse_merge(validate: false, dependent: :destroy, autosave: true) #, inverse_of: as)
+          reflections = has_one(name, scope, options)
+          
+          cattr_reader("actable_reflection_" + name.to_s) { reflections.stringify_keys[name.to_s] }
+        end
+
         def actable(scope = nil, **options)
-          name = options.delete(:as) || :actable
+          include Actable::InstanceMethods
 
-          reflections = belongs_to(name, scope, options.reverse_merge(validate: false,
-                                                                      polymorphic: true,
-                                                                      dependent: :destroy,
-                                                                      autosave: true,
-                                                                      inverse_of: to_s.underscore))
-
-          cattr_reader(:actable_reflection) { reflections.stringify_keys[name.to_s] }
-
+          cattr_reader(:actable_reflection) {  }
+          
           def self.methods_callable_by_submodel
             @methods_callable_by_submodel ||= Set.new
           end
@@ -100,7 +104,6 @@ module ActiveRecord
             super.tap(&method(:callable_by_submodel))
           end
 
-          alias_method :specific, name
         end
 
         def actable?

@@ -5,6 +5,7 @@ require 'active_record/acts_as/relation'
 require 'active_record/acts_as/migration'
 require 'active_record/acts_as/class_methods'
 require 'active_record/acts_as/instance_methods'
+require 'active_record/acts_as/switching_methods'
 require 'active_record/acts_as/querying'
 
 module ActiveRecord
