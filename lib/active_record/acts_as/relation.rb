@@ -12,7 +12,7 @@ module ActiveRecord
           as                 = options.delete(:as) || :actable
           validates_actable  = !options.key?(:validates_actable) || options.delete(:validates_actable)
 
-          options = options.reverse_merge(validate: false, autosave: true, inverse_of: as)
+          options = options.reverse_merge(validate: false, autosave: true)#, inverse_of: as)
 
           reflections = belongs_to(name, scope, options)#has_one(name, scope, options)
           default_scope -> {
